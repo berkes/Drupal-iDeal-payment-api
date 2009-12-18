@@ -1,0 +1,22 @@
+<?php
+
+// The secure path should *NEVER* point to a path within "www-root" of the Apache server.
+// This is for security considerations to protect the private key, the certificates and
+// the configuration file. 
+
+// Make sure to use a path outside the www-root that you can protect properly
+
+//define( "SECURE_PATH", "/Applications/MAMP/htdocs/ideal1/sites/all/modules/uc_ideal_pro/lib/includes/security" );
+define( "SECURE_PATH", $_SERVER['DOCUMENT_ROOT'].'/'.drupal_get_path('module', 'ideal_payment_api')."/lib/includes/security" );
+
+
+/*
+If you did not change the directory structure you can use the following path:
+define( "SECURE_PATH", "includes/security" );
+
+If you have changed the location of the security directory use the following path:
+define( "SECURE_PATH", "http://www.mysite.com/ideal/includes/security" );
+(example)
+
+*/
+?>

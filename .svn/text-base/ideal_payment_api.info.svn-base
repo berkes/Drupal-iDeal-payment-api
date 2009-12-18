@@ -1,0 +1,4 @@
+; $Id$
+name = iDEAL Payment API
+description = "Generic iDEAL payment API module for iDEAL payment processing. No shoppingcart module needed."
+core = "6.x"
