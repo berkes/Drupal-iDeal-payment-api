@@ -395,13 +395,6 @@ function ideal_payment_api_get_lib() {
   elseif (file_exists($path_module.'/lib/iDEALConnector.php')) {
     $lib = 'connector'; //New ING
   }
-  else {
-    //No lib available
-    watchdog('ideal_api', 'iDEAL PHP librairy not found in /lib.', NULL, WATCHDOG_ERROR);
-    drupal_set_message(t('iDEAL PHP librairy not found in /lib.'), 'error');
-    return;
-  }
-
   return $lib;
 }
 
