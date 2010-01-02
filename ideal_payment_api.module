@@ -203,15 +203,15 @@ function ideal_payment_api_admin_settings() {
  */
 function ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $path_back_error, $path_back_succes) {
   //Check permissions
-  if(user_access('make iPAPI payments')){
+  if (user_access('make iPAPI payments')) {
     //Check if order_id is already used
-    if(ideal_payment_api_order_load($order_id)){
-      drupal_set_message(t('The order ID must be unique, payment can not proceed. order ID:').$order_id, 'error');
+    if (ideal_payment_api_order_load($order_id)) {
+      drupal_set_message(t('The order ID must be unique, payment can not proceed. order ID:') . $order_id, 'error');
       return FALSE;
     }
 
     //Fill TransReq session var
-    $_SESSION['ideal_payment_api_order_data']= array(
+    $_SESSION['ideal_payment_api_order_data'] = array(
       'order_id' => $order_id,
       'description' => $order_desc,
       'amount' => $order_total * 100,   //amount *100
@@ -221,10 +221,10 @@ function ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $p
 
     $form_html = drupal_get_form('ideal_payment_api_issuer_form', $form);
 
-    return($form_html);
+    return $form_html;
   }
   else{
-    drupal_set_message(t('Sorry, you have no privelidges to make payments.').$order_id, 'warning');
+    drupal_set_message(t('Sorry, you have no privelidges to make payments.') . $order_id, 'warning');
     return FALSE;
   }
 }
@@ -232,15 +232,15 @@ function ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $p
 /**
  * Refresh issuer list
  */
-function ideal_payment_api_refresh_issuerlist(){
+function ideal_payment_api_refresh_issuerlist() {
   $arr_issuers = ideal_payment_api_dirreq_call();
-  if(is_array($arr_issuers) && count($arr_issuers) > 0){
+  if (is_array($arr_issuers) && count($arr_issuers) > 0) {
     db_query("TRUNCATE TABLE {ideal_payment_api_issuers}");
     foreach ($arr_issuers as $issuer) {
       db_query("INSERT INTO {ideal_payment_api_issuers} (iss_id, iss_name) VALUES (%d, '%s')", $issuer->issuerID, $issuer->issuerName );
     }
   }
-  else{
+  else {
     print_r($arr_issuers); //Contains error message
   }
 }
@@ -248,7 +248,7 @@ function ideal_payment_api_refresh_issuerlist(){
 /**
  * Load issuer form
  */
-function ideal_payment_api_issuer_form(){
+function ideal_payment_api_issuer_form() {
   //Load issuers
   $options['choose'] = t('Choose your bank...');
   $result = db_query('SELECT * FROM {ideal_payment_api_issuers} ORDER BY iss_id  ASC');
@@ -272,11 +272,11 @@ function ideal_payment_api_issuer_form(){
   );
   $form['ideal_dirreq_form']['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Go to my bank').' ->',
+    '#value' => t('Go to my bank') .' ->',
     '#weight' => 1,
   );
-  return($form);
 
+  return $form;
 }
 
 /**
@@ -284,12 +284,12 @@ function ideal_payment_api_issuer_form(){
  */
 function ideal_payment_api_issuer_form_validate($form, $form_state) {
   $issuer = $form_state['values']['issuer'];
-  if($issuer == 'choose'){
+  if ($issuer == 'choose') {
     form_set_error('issuer', t('Please select your bank.'));
   }
-  else{
+  else {
     $result = db_query('SELECT iss_id FROM {ideal_payment_api_issuers} WHERE iss_id = %d', $form_state['values']['issuer'] );
-    if(!db_fetch_object($result)) {
+    if (!db_fetch_object($result)) {
       form_set_error('issuer', t('An unvalid issuer is chosen. Please contact us if this problem persists.'));
     }
   }
@@ -305,34 +305,34 @@ function ideal_payment_api_issuer_form_submit($form, &$form_state) {
 /**
  * Recheck payment status manually
  */
-function ideal_payment_api_statreq_recheck(){
+function ideal_payment_api_statreq_recheck() {
   $form_html = drupal_get_form('ideal_payment_api_statreq_recheck_form', $form);
-
 }
 
 /*
  * Load status recheck form
  */
-function ideal_payment_api_statreq_recheck_form(){
+function ideal_payment_api_statreq_recheck_form() {
   $form['ideal_dirreq_form']['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Recheck my payment status').' ->',
+    '#value' => t('Recheck my payment status') .' ->',
     '#weight' => 1,
   );
-  return($form);
+
+  return $form;
 }
 
 /*
  * Load status recheck form
  */
-function ideal_payment_api_statreq_recheck_form_submit($form, &$form_state){
+function ideal_payment_api_statreq_recheck_form_submit($form, &$form_state) {
   //Init
   $order_data = $_SESSION['ideal_payment_api_order_data'];
   $order = ideal_payment_api_order_load($order_data['order_id']);
-	if($order){
+	if ($order) {
     ideal_payment_api_statreq_call($order);
 	}
-	else{
+	else {
 		drupal_set_message(t('No order data found to recheck. Please contact us if you have trouble with your order.'), 'error');
 	}
 }
@@ -340,7 +340,7 @@ function ideal_payment_api_statreq_recheck_form_submit($form, &$form_state){
 /*
  * Automated status request
  */
-function ideal_payment_api_auto_recheck(){
+function ideal_payment_api_auto_recheck() {
   $result = db_query('SELECT * FROM {ideal_payment_api_orders} WHERE payment_status = 0');
   while ($order = db_fetch_array($result)) {
     $order['order_id'] = $order['oid']; //To be compatible with order session var
@@ -379,7 +379,7 @@ function LoadConfiguration() {
   );
 
   //IMPORTANT, 'DESCRIPTION' is bound to max. 32 chars!!
-	$arr_conf['DESCRIPTION'] = t('order# '). $_SESSION['ideal_payment_api_order_data']['order_id'];
+	$arr_conf['DESCRIPTION'] = t('order# ') . $_SESSION['ideal_payment_api_order_data']['order_id'];
 
   return $arr_conf;
 }
@@ -395,21 +395,22 @@ function ideal_payment_api_get_lib() {
   elseif (file_exists($path_module.'/lib/iDEALConnector.php')) {
     $lib = 'connector'; //New ING
   }
-  else{
+  else {
     //No lib available
     watchdog('ideal_api', 'iDEAL PHP librairy not found in /lib.', NULL, WATCHDOG_ERROR);
     drupal_set_message(t('iDEAL PHP librairy not found in /lib.'), 'error');
     return;
   }
+
   return $lib;
 }
 
 /**
  * Save order
  */
-function ideal_payment_api_order_save($order_id, $user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status){
+function ideal_payment_api_order_save($order_id, $user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status) {
   //Paranoia check that sesson order var exists
-	if($_SESSION['ideal_payment_api_order_data']){
+	if ($_SESSION['ideal_payment_api_order_data']) {
 		//Since order numbers are unique we can safely delete any order with this ID
 		ideal_payment_api_order_delete($order_id);
 	}
@@ -424,7 +425,7 @@ function ideal_payment_api_order_save($order_id, $user_id, $description, $amount
 	}
 
 	if ($inserted) {
-		if($payment_status == 1){
+		if ($payment_status == 1) {
 			//Destroy session order var when payment is OK
 			unset($_SESSION['ideal_payment_api_order_data']);
 		}
@@ -438,15 +439,15 @@ function ideal_payment_api_order_save($order_id, $user_id, $description, $amount
 /**
  * Update order status
  */
-function ideal_payment_api_order_update($order_id, $payment_status){
-	if(db_query("UPDATE {ideal_payment_api_orders} SET payment_status = %d WHERE oid = %d", $payment_status, $order_id)){
-		if($payment_status == 1){
+function ideal_payment_api_order_update($order_id, $payment_status) {
+	if (db_query("UPDATE {ideal_payment_api_orders} SET payment_status = %d WHERE oid = %d", $payment_status, $order_id)) {
+		if ($payment_status == 1) {
 			//Destroy session order var when payment is OK
 			unset($_SESSION['ideal_payment_api_order_data']);
 		}
     return TRUE;
 	}
-	else{
+	else {
 		return FALSE;
 	}
 }
@@ -454,11 +455,11 @@ function ideal_payment_api_order_update($order_id, $payment_status){
 /**
  * Delete order
  */
-function ideal_payment_api_order_delete($order_id){
-	if(db_query("DELETE FROM {ideal_payment_api_orders} WHERE oid = %d", $order_id)){
+function ideal_payment_api_order_delete($order_id) {
+	if (db_query("DELETE FROM {ideal_payment_api_orders} WHERE oid = %d", $order_id)) {
 		return TRUE;
 	}
-	else{
+	else {
 		return FALSE;
 	}
 }
@@ -466,13 +467,13 @@ function ideal_payment_api_order_delete($order_id){
 /**
  * Load order
  */
-function ideal_payment_api_order_load($order_id){
+function ideal_payment_api_order_load($order_id) {
 	$result = db_query("SELECT * FROM {ideal_payment_api_orders} WHERE oid = %d", $order_id);
 	$order = db_fetch_array($result);
-	if(is_array($order)){
+	if (is_array($order)) {
 		return $order;
 	}
-	else{
+	else {
 		return FALSE;
 	}
 }
@@ -480,7 +481,7 @@ function ideal_payment_api_order_load($order_id){
 /**
  * Test this API
  */
-function ideal_payment_api_test(){
+function ideal_payment_api_test() {
   $order_id = 800;
   $order_desc = 'test opmerking';
   $order_total = '315';
