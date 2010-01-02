@@ -5,12 +5,12 @@
 
 /**
  * @file
- * Generic iDEAL payment API module for iDEAL payment processing. No shoppingcart module needed. 
+ * Generic iDEAL payment API module for iDEAL payment processing. No shoppingcart module needed.
  * For iDEAL ING/PB Advanced & RABO Professional
  *
  * Development by Qrios | http://www.qrios.nl | c.kodde {at} qrios {dot} nl
- * 
- * 
+ *
+ *
  */
 
 //First load include based on available lib
@@ -177,7 +177,7 @@ function ideal_payment_api_admin_settings() {
     '#description' => t('Language is only used for showing errormessages in the prefered language. nl/en.'),
     '#required' => TRUE,
   );
-  
+
   return system_settings_form($form);
 }
 
@@ -276,7 +276,7 @@ function ideal_payment_api_issuer_form(){
  */
 function ideal_payment_api_issuer_form_validate($form, $form_state) {
   $issuer = $form_state['values']['issuer'];
-  if($issuer == 'choose'){ 
+  if($issuer == 'choose'){
     form_set_error('issuer', t('Please select your bank.'));
   }
   else{
@@ -369,7 +369,7 @@ function LoadConfiguration() {
 		//'TraceLevel' => 'DEBUG,ERROR',
 
   );
-	
+
   //IMPORTANT, 'DESCRIPTION' is bound to max. 32 chars!!
 	$arr_conf['DESCRIPTION'] = t('order# '). $_SESSION['ideal_payment_api_order_data']['order_id'];
 
@@ -407,14 +407,14 @@ function ideal_payment_api_order_save($order_id, $user_id, $description, $amount
 	}
 	//Save order
 	if ($order_id = NULL) {//use autoincrement
-	  $inserted = db_query("INSERT INTO {ideal_payment_api_orders} (user_id, description, amount, issuer_id, transaction_id, payment_status) VALUES 
+	  $inserted = db_query("INSERT INTO {ideal_payment_api_orders} (user_id, description, amount, issuer_id, transaction_id, payment_status) VALUES
 					(%d,'%s', %d, '%s', '%s', %d)", $user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status);
 	}
 	else {
-	  $inserted = db_query("INSERT INTO {ideal_payment_api_orders} (oid, user_id, description, amount, issuer_id, transaction_id, payment_status) VALUES 
+	  $inserted = db_query("INSERT INTO {ideal_payment_api_orders} (oid, user_id, description, amount, issuer_id, transaction_id, payment_status) VALUES
 					(%d, %d,'%s', %d, '%s', '%s', %d)", $order_id, $user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status);
 	}
-	
+
 	if ($inserted) {
 		if($payment_status == 1){
 			//Destroy session order var when payment is OK
