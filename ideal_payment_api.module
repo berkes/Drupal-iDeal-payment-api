@@ -13,7 +13,6 @@
  * 
  */
 
-
 //First load include based on available lib
 $lib = ideal_payment_api_get_lib();
 $path_module = drupal_get_path('module', 'ideal_payment_api');
@@ -82,17 +81,8 @@ function ideal_payment_api_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  /*$items['sitemap'] = array(
-    'title' => 'Site map',
-    'description' => 'Display a site map with RSS feeds.',
-    'page callback' => 'site_map_page',
-    'access arguments' => array('access site map'),
-    'type' => MENU_SUGGESTED_ITEM,
-  );*/
-
   return $items;
 }
-
 
 /**
  * Implementation of hook_perm().
@@ -100,7 +90,6 @@ function ideal_payment_api_menu() {
 function ideal_payment_api_perm() {
   return array('administer iPAPI', 'make iPAPI payments');
 }
-
 
 /**
  * Menu callback; presents the sitemap settings page.
@@ -232,10 +221,6 @@ function ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $p
   }
 }
 
-
-
-
-
 /**
  * Refresh issuer list
  */
@@ -263,7 +248,6 @@ function ideal_payment_api_issuer_form(){
     $options[$row->iss_id] = $row->iss_name;
   }
 
-  //$form['#submit'][] = 'webform_client_form_submit';
   $form['ideal_dirreq_form'] = array(
     '#type' => 'fieldset',
     '#title' => t('Please choose your bank'),
@@ -356,12 +340,10 @@ function ideal_payment_api_auto_recheck(){
   }
 }
 
-
 /**
  *----------------
  *Helper functions
  */
-
 /**
  * Get configuration
  */
@@ -390,8 +372,6 @@ function LoadConfiguration() {
 	
   //IMPORTANT, 'DESCRIPTION' is bound to max. 32 chars!!
 	$arr_conf['DESCRIPTION'] = t('order# '). $_SESSION['ideal_payment_api_order_data']['order_id'];
-  //print_r($arr_conf);
-  //exit;
 
   return $arr_conf;
 }
@@ -489,16 +469,10 @@ function ideal_payment_api_order_load($order_id){
 	}
 }
 
-
-
 /**
  * Test this API
  */
 function ideal_payment_api_test(){
-  ////Uncheck for cron test
-  //ideal_payment_api_auto_recheck();
-  //return;
-  
   $order_id = 800;
   $order_desc = 'test opmerking';
   $order_total = '315';
