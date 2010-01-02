@@ -49,7 +49,7 @@ TOUBLESHOOTING
 -Blank page when trying to submit an order: Review Drupal log for "Cannot modify header information - headers already sent by..." messages, remove empty lines after closing PHP tag "?>" in the file mentioned in the log message.
 
 
-AUTHOR
+ORIGINAL AUTHOR
 
 C. Kodde
 Qrios Webdiensten
