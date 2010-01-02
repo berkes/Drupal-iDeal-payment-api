@@ -14,7 +14,7 @@ function ideal_payment_api_install() {
         PRIMARY KEY  (iss_id)
       ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
       db_query("CREATE TABLE {ideal_payment_api_orders} (
-        oid mediumint(9) NOT NULL AUTOINCREMENT,
+        oid mediumint(9) NOT NULL AUTO_INCREMENT,
         user_id mediumint(9) NOT NULL,
         description varchar(64) NOT NULL,
         amount mediumint(9) NOT NULL,
@@ -27,22 +27,6 @@ function ideal_payment_api_install() {
     case 'pgsql':
       break;
   }
-}
-
-/**
- * Add autoincrement to oid
- * @return updatesql array
- */
-function ideal_payment_api_update_1() {
-  $ret = array();
-  $spec = array(
-    'description' => t('Primary identifier.'),
-    'type' => 'serial',
-    'unsigned' => TRUE,
-    'not null' => TRUE,
-  );
-  db_change_field($ret, 'ideal_payment_api_orders', 'oid', 'oid', $spec);
-  return $ret;
 }
 
 /**
