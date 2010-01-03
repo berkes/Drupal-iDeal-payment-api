@@ -41,6 +41,7 @@ function ideal_payment_api_uninstall(){
 
 /**
  * Implementation of hook_requirements().
+ * @TODO: on stage install, check for required openssl-extension for PHP.
  */
 function ideal_payment_api_requirements($stage) {
   $t = get_t();
