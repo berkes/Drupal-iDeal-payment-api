@@ -38,3 +38,29 @@ function ideal_payment_api_uninstall(){
   db_query("DELETE FROM {variable} WHERE name LIKE 'ideal_payment_api_%'");
   cache_clear_all('variables', 'cache');
 }
+
+/**
+ * Implementation of hook_requirements().
+ * @TODO: on stage install, check for required openssl-extension for PHP.
+ */
+function ideal_payment_api_requirements($stage) {
+  $t = get_t();
+  if ($stage == 'install' || $stage == 'runtime') {
+    $path_module = drupal_get_path('module', 'ideal_payment_api');
+    dvm($path_module);
+    if (file_exists($path_module.'/lib/ThinMPI.php')) {
+      $lib = 'thinmpi'; //Rabo + old ING
+    }
+    elseif (file_exists($path_module.'/lib/iDEALConnector.php')) {
+      $lib = 'connector'; //New ING
+    }
+    else {
+      $message['ipapi_lib_missing'] = array(
+        'title' => $t('iDEAL PHP library'),
+        'description' => $t('iDEAL PHP library not found in /lib'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+  return $message;
+}
