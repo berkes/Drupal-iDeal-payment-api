@@ -280,12 +280,6 @@ function ideal_payment_api_issuer_form_validate($form, $form_state) {
   if ($issuer == 'choose') {
     form_set_error('issuer', t('Please select your bank.'));
   }
-  else {
-    $result = db_query('SELECT iss_id FROM {ideal_payment_api_issuers} WHERE iss_id = %d', $form_state['values']['issuer'] );
-    if (!db_fetch_object($result)) {
-      form_set_error('issuer', t('An invalid issuer is chosen. Please contact us if this problem persists.'));
-    }
-  }
 }
 
 /**
@@ -471,7 +465,7 @@ function ideal_payment_api_test() {
   $order_id = 800;
   $order_desc = 'test opmerking';
   $order_total = '315';
-  $path_back_error = 'product';
+  $path_back_error = 'ideal/payment_test';
   $path_back_succes = NULL; // = home
 
   return ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $path_back_error, $path_back_succes);
