@@ -351,7 +351,7 @@ function ideal_payment_api_auto_recheck() {
  * Get configuration
  */
 function LoadConfiguration() {
-  $url_base = url(NULL, array('absolute' => TRUE));
+  $url_base = url(NULL, NULL, NULL, TRUE);
   //Load configuration in array
   $arr_conf = array(
     'PRIVATEKEY' =>         filter_xss(variable_get('ideal_payment_api_privatekey', 'priv.pem')),
@@ -474,7 +474,7 @@ function ideal_payment_api_test() {
   $order_desc = 'test opmerking';
   $order_total = '315';
   $path_back_error = 'ideal/payment_test';
-  $path_back_succes = NULL; // = home
+  $path_back_succes = 'node'; // = home
 
   return ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $path_back_error, $path_back_succes);
 }
