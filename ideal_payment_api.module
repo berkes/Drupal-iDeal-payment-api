@@ -56,8 +56,8 @@ function ideal_payment_api_menu($may_cache) {
   if ($may_cache) {
     $items[] = array(
       'path' => 'admin/settings/ideal',
-      'title' => 'iDEAL Payment API',
-      'description' => 'iDEAL Payment API settings.',
+      'title' => t('iDEAL Payment API'),
+      'description' => t('iDEAL Payment API settings.'),
       'callback' => 'drupal_get_form',
       'callback arguments' => array('ideal_payment_api_admin_settings'),
       'access' => user_access('administer iPAPI'),
@@ -65,8 +65,8 @@ function ideal_payment_api_menu($may_cache) {
     );
     $items[] = array(
       'path' => 'ideal/payment_test',
-      'title' => 'iDEAL Payment API Test',
-      'description' => 'iDEAL Payment API Test.',
+      'title' => t('iDEAL Payment API Test'),
+      'description' => t('iDEAL Payment API Test.'),
       'callback' => 'ideal_payment_api_test',
       'access' => user_access('administer iPAPI'),
       'type' => MENU_NORMAL_ITEM,
@@ -273,7 +273,7 @@ function ideal_payment_api_issuer_form() {
   );
   $form['ideal_dirreq_form']['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Go to my bank') .' ->',
+    '#value' => t('Go to my bank »'),
     '#weight' => 1,
   );
 
@@ -310,7 +310,7 @@ function ideal_payment_api_statreq_recheck() {
 function ideal_payment_api_statreq_recheck_form() {
   $form['ideal_dirreq_form']['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Recheck my payment status') .' ->',
+    '#value' => t('Recheck my payment status »'),
     '#weight' => 1,
   );
 
