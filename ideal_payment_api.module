@@ -241,11 +241,11 @@ function ideal_payment_api_issuer_form($order) {
   
   //Load issuers
   $options['choose'] = t('Choose your bank...');
-  $result = db_query('SELECT * FROM {ideal_payment_api_issuers} ORDER BY iss_id  ASC');
+  $result = db_query('SELECT * FROM {ideal_payment_api_issuers} ORDER BY iss_id ASC');
   while ($row = db_fetch_object($result)) {
     $options[$row->iss_id] = $row->iss_name;
   }
-
+  
   $form['ideal_dirreq_form'] = array(
     '#type' => 'fieldset',
     '#title' => t('Please choose your bank'),
