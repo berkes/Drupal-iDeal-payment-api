@@ -289,6 +289,22 @@ function ideal_payment_api_issuer_form_submit($form, &$form_state) {
   ideal_payment_api_transreq_call($form_state['values']['issuer']);
 }
 
+
+/**
+ * Theme issuer form/
+ * @ingroup theme
+ */
+function theme_ideal_payment_api_issuer_form($form) {
+dpm($form['order']);
+  $output = '';
+  $output .= '<div class="order">';
+  $output .= $form['order']['#value']['description']; //no filter_xss, because often we get a table. Passer should escape XSS!
+  $output .= '</div>';
+
+  $output .= drupal_render($form);
+  return $output;
+}
+
 /**
  * Recheck payment status manually
  */
