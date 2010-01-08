@@ -284,7 +284,7 @@ function ideal_payment_api_issuer_form() {
  * Validate issuer form
  */
 function ideal_payment_api_issuer_form_validate($form, $form_state) {
-  $issuer = $form_state['values']['issuer'];
+  $issuer = $form_state['issuer'];
   if ($issuer == 'choose') {
     form_set_error('issuer', t('Please select your bank.'));
   }
@@ -294,7 +294,7 @@ function ideal_payment_api_issuer_form_validate($form, $form_state) {
  * Submit issuer form
  */
 function ideal_payment_api_issuer_form_submit($form, &$form_state) {
-  ideal_payment_api_transreq_call($form_state['values']['issuer']);
+  ideal_payment_api_transreq_call($form_state['issuer']);
 }
 
 /**
