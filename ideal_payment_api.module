@@ -26,16 +26,13 @@ elseif ($lib == 'connector'){
 /**
  * Implementation of hook_help().
  */
-function ideal_payment_api_help($section='') {
-
+function ideal_payment_api_help($section = '') {
   $output = '';
-
   switch ($section) {
     case "admin/help#ideal_payment_api":
-      $output = '<p>'.  t("Generic iDEAL payment API module for iDEAL payment processing. No shoppingcart module needed."). '</p>';
+      $output = t("Generic iDEAL payment API module for iDEAL payment processing. No shoppingcart module needed.");
       break;
   }
-
   return $output;
 }
 
