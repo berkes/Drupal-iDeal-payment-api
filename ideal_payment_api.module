@@ -193,12 +193,6 @@ function ideal_payment_api_admin_settings() {
 function ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $path_back_error, $path_back_succes) {
   //Check permissions
   if (user_access('make iPAPI payments')) {
-    //Check if order_id is already used
-    if (ideal_payment_api_order_load($order_id)) {
-      drupal_set_message(t('The order ID must be unique, payment can not proceed. order ID:') . $order_id, 'error');
-      return FALSE;
-    }
-
     //Fill TransReq session var
     $order = array(
       'order_id' => $order_id,
@@ -282,6 +276,9 @@ function ideal_payment_api_issuer_form_validate($form, $form_state) {
   $issuer = $form_state['values']['issuer'];
   if ($issuer == 'choose') {
     form_set_error('issuer', t('Please select your bank.'));
+  }
+  if (empty($form_state['order'])) {
+    form_set_error('order', t('You did not provide an order, probably due to a technical issue.'));
   }
 }
 
