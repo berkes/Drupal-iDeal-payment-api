@@ -200,7 +200,7 @@ function ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $p
     }
 
     //Fill TransReq session var
-    $_SESSION['ideal_payment_api_order_data'] = array(
+    $order = array(
       'order_id' => $order_id,
       'description' => $order_desc,
       'amount' => $order_total * 100,   //amount *100
@@ -208,7 +208,7 @@ function ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $p
       'path_back_succes' => $path_back_succes,
     );
 
-    $form_html = drupal_get_form('ideal_payment_api_issuer_form', $form);
+    $form_html = drupal_get_form('ideal_payment_api_issuer_form', $order);
 
     return $form_html;
   }
@@ -238,7 +238,13 @@ function ideal_payment_api_refresh_issuerlist() {
 /**
  * Load issuer form
  */
-function ideal_payment_api_issuer_form() {
+function ideal_payment_api_issuer_form($order) {
+  
+  $form['order'] = array(
+    '#type' => 'value',
+    '#value' => $order,
+  );
+  
   //Load issuers
   $options['choose'] = t('Choose your bank...');
   $result = db_query('SELECT * FROM {ideal_payment_api_issuers} ORDER BY iss_id  ASC');
@@ -310,15 +316,8 @@ function ideal_payment_api_statreq_recheck_form() {
  * Load status recheck form
  */
 function ideal_payment_api_statreq_recheck_form_submit($form, &$form_state) {
-  //Init
-  $order_data = $_SESSION['ideal_payment_api_order_data'];
-  $order = ideal_payment_api_order_load($order_data['order_id']);
-	if ($order) {
-    ideal_payment_api_statreq_call($order);
-	}
-	else {
-		drupal_set_message(t('No order data found to recheck. Please contact us if you have trouble with your order.'), 'error');
-	}
+  $order = ideal_payment_api_order_load($form_state['order']['order_id']);
+  ideal_payment_api_statreq_call($order);
 }
 
 /*
@@ -386,13 +385,9 @@ function ideal_payment_api_get_lib() {
  * Save order
  */
 function ideal_payment_api_order_save($order_id, $user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status) {
-  //Paranoia check that sesson order var exists
-	if ($_SESSION['ideal_payment_api_order_data']) {
-		//Since order numbers are unique we can safely delete any order with this ID
-		ideal_payment_api_order_delete($order_id);
-	}
 	//Save order
-	if ($order_id = NULL) {//use autoincrement
+	if ($order_id = NULL) {
+	  $order_id = db_next_id('ideal_payment_api_orders');
 	  $inserted = db_query("INSERT INTO {ideal_payment_api_orders} (user_id, description, amount, issuer_id, transaction_id, payment_status) VALUES
 					(%d,'%s', %d, '%s', '%s', %d)", $user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status);
 	}
@@ -402,14 +397,10 @@ function ideal_payment_api_order_save($order_id, $user_id, $description, $amount
 	}
 
 	if ($inserted) {
-		if ($payment_status == 1) {
-			//Destroy session order var when payment is OK
-			unset($_SESSION['ideal_payment_api_order_data']);
-		}
-		return TRUE;
+		return $order_id;
 	}
 	else {
-		return FALSE;
+		return 0;
 	}
 }
 
