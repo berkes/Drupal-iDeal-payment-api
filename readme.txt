@@ -38,6 +38,19 @@ Arguments:
   $path_back_error, string, drupal path to redirect to on unsuccesfull payment. Probably the originating product/order form.
   $path_back_succes, string, drupal path to redirect to on succesfull payment. Probably the home page or a "thank you" page.
 
+DATABASE
+One table ideal_payment_api_orders
+
+ * oid - Primary key
+ * user_id - For registered or logged in users: set to their ID, else 0
+ * description - Short, human readable string describing the Order.
+ * amount - Price, in cents.
+ * issuer_id - Id of the bank from which the transaction is to be performed (user's choice),
+ * transaction_id - Key of the transaction in your remote Ideal database
+ * payment_status - Integer describing the status of the payment. Currently:
+ **  0 - Not payed. 
+ **  1 - Payed
+ * foreign_id - Free ID-field to store your own ID, when integrating. E.g to match against your e-commerce's package order_id.
 
 DESCRIPTION
 
