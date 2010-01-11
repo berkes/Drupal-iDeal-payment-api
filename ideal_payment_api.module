@@ -10,7 +10,7 @@
  *
  * Development by Qrios | http://www.qrios.nl | c.kodde {at} qrios {dot} nl
  *
- *
+ * @TODO: harmonise the error messages to WATCHDOG and to SET_MESSAGE. 
  */
 
 //First load include based on available lib
@@ -40,6 +40,8 @@ function ideal_payment_api_help($section = '') {
  * Implementation of hook_cron().
  */
 function ideal_payment_api_cron() {
+  // @TODO: insert time-based action firing here.
+  //@TODO: refres-issuers should be called far less often then recheck. 
   ideal_payment_api_refresh_issuerlist();
   ideal_payment_api_auto_recheck();
 }
@@ -197,6 +199,7 @@ function ideal_payment_api_admin_settings() {
  *  $path_back_error, string, drupal path to redirect to on unsuccesfull payment. Probably the originating product/order form.
  *  $path_back_succes, string, drupal path to redirect to on succesfull payment. Probably the home page or a "thank you" page.
  *	All arguments are required
+ * @TODO: insert a user_id in the order, to allow orders for other $users then global $user (= you)
  */
 function ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $path_back_error, $path_back_succes) {
   //Check permissions
@@ -205,7 +208,7 @@ function ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $p
     $order = array(
       'order_id' => $order_id,
       'description' => $order_desc,
-      'amount' => $order_total * 100,   //amount *100
+      'amount' => $order_total * 100,   //amount *100, in cents.
       'path_back_error' => $path_back_error,
       'path_back_succes' => $path_back_succes,
     );
