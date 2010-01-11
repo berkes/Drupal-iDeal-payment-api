@@ -59,6 +59,7 @@ function ideal_payment_api_transreq_call($order) {
   require_once($path_module.'/lib/iDEALConnector.php');
   $iDEALConnector = new iDEALConnector();
   
+  $order['description'] = check_plain($order['description']); //$string is passed into XMLrpc call, thus cannot contain HTML.
   if (drupal_strlen($order['description']) > 32) {//@TODO: run this trough a general error handler.
     $order['description_orig'] = $order['description'];
     $order['description'] = drupal_substr($order['description'], 0, 32);
@@ -78,19 +79,13 @@ function ideal_payment_api_transreq_call($order) {
     $iDEALConnector->config['EXPIRATIONPERIOD'],
     $iDEALConnector->config['MERCHANTRETURNURL']
   );
-
   if (!$response->errCode) {
 		$transaction_id = $response->getTransactionID();
-
-    //Add transaction id to sesion order_data
-    $_SESSION['ideal_payment_api_order_data']['transaction_id'] = $transaction_id;
+		ideal_payment_api_order_update($order_id, $payment_status, $transaction_id);
 
 		//Get IssuerURL and decode it
 		$ISSURL = $response->getIssuerAuthenticationURL();
 		$ISSURL = html_entity_decode($ISSURL);
-
-    //Save order as 'payed = 0'
-    ideal_payment_api_order_save($order_id, $user_id, $description, $amount, $issuer_id, $transaction_id, 0);
 
 		//Redirect the browser to the issuer URL
 		header("Location: $ISSURL");
