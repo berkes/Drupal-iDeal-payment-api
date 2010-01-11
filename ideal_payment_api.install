@@ -21,6 +21,7 @@ function ideal_payment_api_install() {
         issuer_id varchar(64) NOT NULL,
         transaction_id varchar(64) NOT NULL,
         payment_status tinyint(4) NOT NULL,
+        foreign_id int(11) NOT NULL,
         PRIMARY KEY  (oid)
       ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
       break;
@@ -36,6 +37,16 @@ function ideal_payment_api_install() {
 function ideal_payment_api_update_5001() {
   $ret = array();
   $ret[] = update_sql('ALTER TABLE {ideal_payment_api_orders} MODIFY COLUMN oid INT(11) NOT NULL DEFAULT 0');
+  return $ret;
+}
+
+/**
+ * Implementation of hook_update_N().
+ * Add foreign_id optional column
+ */
+function ideal_payment_api_update_5002() {
+  $ret = array();
+  $ret[] = update_sql("ALTER TABLE {ideal_payment_api_orders} ADD foreign_id INT(3) unsigned default '0' NOT NULL");
   return $ret;
 }
 
