@@ -207,7 +207,7 @@ function ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $p
     return $form_html;
   }
   else{
-    drupal_set_message(t('Sorry, you have no privelidges to make payments.') . $order_id, 'warning');
+    drupal_set_message(t('Sorry, you have no privileges to make payments.') . $order_id, 'warning');
     return FALSE;
   }
 }
