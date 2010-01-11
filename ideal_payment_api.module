@@ -188,25 +188,19 @@ function ideal_payment_api_admin_settings() {
   return system_settings_form($form);
 }
 
-//The Payment Page API
-/**
- * Arguments:
- *  $order_id, $order_desc, $order_total, $path_back_error, $path_back_succes
- *
- *  $order_id, integer, must be unique, or else payment will be rejected
- *  $order_desc, string
- *  $order_total, decimal number ###,##
- *  $path_back_error, string, drupal path to redirect to on unsuccesfull payment. Probably the originating product/order form.
- *  $path_back_succes, string, drupal path to redirect to on succesfull payment. Probably the home page or a "thank you" page.
+/** 
+ * MAIN API: this is the function to call, in order to present a page.
+ *  @argument $order_desc, string
+ *  @argument $order_total, decimal number ###,##
+ *  @argument $path_back_error, string, drupal path to redirect to on unsuccesfull payment. Probably the originating product/order form.
+ *  @argument $path_back_succes, string, drupal path to redirect to on succesfull payment. Probably the home page or a "thank you" page.
  *	All arguments are required
  * @TODO: insert a user_id in the order, to allow orders for other $users then global $user (= you)
  */
-function ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $path_back_error, $path_back_succes) {
-  //Check permissions
+function ideal_payment_api_payment_page($order_desc, $order_total, $path_back_error, $path_back_succes) {
+
   if (user_access('make iPAPI payments')) {
-    //Fill TransReq session var
     $order = array(
-      'order_id' => $order_id,
       'description' => $order_desc,
       'amount' => $order_total * 100,   //amount *100, in cents.
       'path_back_error' => $path_back_error,
@@ -297,7 +291,18 @@ function ideal_payment_api_issuer_form_validate($form, $form_state) {
  * Submit issuer form
  */
 function ideal_payment_api_issuer_form_submit($form, &$form_state) {
-  ideal_payment_api_transreq_call($form_state['issuer']);
+  dpm($form_state);
+  $order = $form_state['order'];
+  $order['issuer_id'] = $form_state['issuer'];
+  
+  //@TODO: $description passed to ideal payment must be an Human readable identifier string. 
+  if (!$order['order_id'] = ideal_payment_api_order_save($order['user_id'], $order['description'], $order['amount'], $form_state['issuer'], NULL, 0)) {
+    drupal_set_message(t('Order could not be saved.'));
+  }
+  else {
+    ideal_payment_api_transreq_call($order);
+    //@TODO: find a way to enforce all other potential submit-handlers tio be fired first. This call does an exit().
+  }  
 }
 
 
@@ -306,7 +311,6 @@ function ideal_payment_api_issuer_form_submit($form, &$form_state) {
  * @ingroup theme
  */
 function theme_ideal_payment_api_issuer_form($form) {
-dpm($form['order']);
   $output = '';
   $output .= '<div class="order">';
   $output .= $form['order']['#value']['description']; //no filter_xss, because often we get a table. Passer should escape XSS!
@@ -408,17 +412,10 @@ function ideal_payment_api_get_lib() {
 /**
  * Save order
  */
-function ideal_payment_api_order_save($order_id, $user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status) {
-	//Save order
-	if ($order_id = NULL) {
-	  $order_id = db_next_id('ideal_payment_api_orders');
-	  $inserted = db_query("INSERT INTO {ideal_payment_api_orders} (user_id, description, amount, issuer_id, transaction_id, payment_status) VALUES
-					(%d,'%s', %d, '%s', '%s', %d)", $user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status);
-	}
-	else {
-	  $inserted = db_query("INSERT INTO {ideal_payment_api_orders} (oid, user_id, description, amount, issuer_id, transaction_id, payment_status) VALUES
-					(%d, %d,'%s', %d, '%s', '%s', %d)", $order_id, $user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status);
-	}
+function ideal_payment_api_order_save($user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status, $foreign_id = 0) {
+  $order_id = db_next_id('ideal_payment_api_orders');
+	$inserted = db_query("INSERT INTO {ideal_payment_api_orders} (oid, user_id, description, amount, issuer_id, transaction_id, payment_status, foreign_id) VALUES
+					(%d, %d,'%s', %d, '%s', '%s', %d, %d)", $order_id, $user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status, $foreign_id);
 
 	if ($inserted) {
 		return $order_id;
@@ -431,17 +428,19 @@ function ideal_payment_api_order_save($order_id, $user_id, $description, $amount
 /**
  * Update order status
  */
-function ideal_payment_api_order_update($order_id, $payment_status) {
-	if (db_query("UPDATE {ideal_payment_api_orders} SET payment_status = %d WHERE oid = %d", $payment_status, $order_id)) {
-		if ($payment_status == 1) {
-			//Destroy session order var when payment is OK
-			unset($_SESSION['ideal_payment_api_order_data']);
-		}
-    return TRUE;
-	}
-	else {
-		return FALSE;
-	}
+function ideal_payment_api_order_update($order_id, $payment_status, $transaction_id = NULL) {
+  $status = FALSE; 
+  
+  if (!$transaction_id) {
+    if (db_query("UPDATE {ideal_payment_api_orders} SET payment_status = %d, transaction_id = '%s' WHERE oid = %d", $payment_status, $transaction_id, $order_id)) {
+      $status = TRUE;
+	  }
+  }
+  else {
+    if (db_query("UPDATE {ideal_payment_api_orders} SET payment_status = %d WHERE oid = %d", $payment_status, $order_id)) {
+      $status = TRUE;
+	  }
+  }
 }
 
 /**
@@ -474,11 +473,10 @@ function ideal_payment_api_order_load($order_id) {
  * Test this API
  */
 function ideal_payment_api_test() {
-  $order_id = 800;
   $order_desc = 'test opmerking';
   $order_total = '315';
   $path_back_error = 'ideal/payment_test';
   $path_back_succes = 'node'; // = home
 
-  return ideal_payment_api_payment_page($order_id, $order_desc, $order_total, $path_back_error, $path_back_succes);
+  return ideal_payment_api_payment_page($order_desc, $order_total, $path_back_error, $path_back_succes);
 }
