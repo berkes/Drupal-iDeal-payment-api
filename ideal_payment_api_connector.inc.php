@@ -110,7 +110,6 @@ function ideal_payment_api_transreq_call($order) {
 
 
 function ideal_payment_api_statreq_call($order_data = FALSE, $unattended = FALSE) {
-  //Init
   if (!is_array($order_data)) {
     $transaction_id = check_plain($_GET['trxid']);
     $order_id = check_plain($_GET['ec']); //@TODO: this MUST be made a lot sturdier. You cannot assume ec == order_id.
@@ -130,9 +129,7 @@ function ideal_payment_api_statreq_call($order_data = FALSE, $unattended = FALSE
   $issuer_id = $order_data['issuer_id'];
   $path_back_succes = $order_data['path_back_succes'];
   $path_back_error = $order_data['path_back_error'];
-  //print_r($_SESSION['ideal_payment_api_order_data']);
-  //exit;
-  //print_r($unattended);
+
   //Get user ID
   global $user;
   if ($user) {
