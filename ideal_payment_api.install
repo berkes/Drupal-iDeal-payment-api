@@ -68,7 +68,6 @@ function ideal_payment_api_requirements($stage) {
   $t = get_t();
   if ($stage == 'install' || $stage == 'runtime') {
     $path_module = drupal_get_path('module', 'ideal_payment_api');
-    dvm($path_module);
     if (file_exists($path_module.'/lib/ThinMPI.php')) {
       $lib = 'thinmpi'; //Rabo + old ING
     }

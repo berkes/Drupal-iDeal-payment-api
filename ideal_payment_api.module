@@ -291,7 +291,6 @@ function ideal_payment_api_issuer_form_validate($form, $form_state) {
  * Submit issuer form
  */
 function ideal_payment_api_issuer_form_submit($form, &$form_state) {
-  dpm($form_state);
   $order = $form_state['order'];
   $order['issuer_id'] = $form_state['issuer'];
   
@@ -474,7 +473,7 @@ function ideal_payment_api_order_load($order_id) {
  */
 function ideal_payment_api_test() {
   $order_desc = 'test opmerking';
-  $order_total = '315';
+  $order_total = '3.15';
   $path_back_error = 'ideal/payment_test';
   $path_back_succes = 'node'; // = home
 
