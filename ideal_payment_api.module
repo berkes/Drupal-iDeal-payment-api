@@ -412,9 +412,10 @@ function ideal_payment_api_get_lib() {
  * Save order
  */
 function ideal_payment_api_order_save($user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status, $foreign_id = 0) {
+  $now = time();
   $order_id = db_next_id('ideal_payment_api_orders');
-	$inserted = db_query("INSERT INTO {ideal_payment_api_orders} (oid, user_id, description, amount, issuer_id, transaction_id, payment_status, foreign_id) VALUES
-					(%d, %d,'%s', %d, '%s', '%s', %d, %d)", $order_id, $user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status, $foreign_id);
+	$inserted = db_query("INSERT INTO {ideal_payment_api_orders} (oid, user_id, description, amount, issuer_id, transaction_id, payment_status, foreign_id, created_at, update_at) VALUES
+					(%d, %d,'%s', %d, '%s', '%s', %d, %d, %d, %d)", $order_id, $user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status, $foreign_id, $now, $now);
 
 	if ($inserted) {
 		return $order_id;
@@ -428,15 +429,16 @@ function ideal_payment_api_order_save($user_id, $description, $amount, $issuer_i
  * Update order status
  */
 function ideal_payment_api_order_update($order_id, $payment_status, $transaction_id = NULL) {
-  $status = FALSE; 
+  $status = FALSE;
+  $now = time();
   
   if (!$transaction_id) {
-    if (db_query("UPDATE {ideal_payment_api_orders} SET payment_status = %d, transaction_id = '%s' WHERE oid = %d", $payment_status, $transaction_id, $order_id)) {
+    if (db_query("UPDATE {ideal_payment_api_orders} SET payment_status = %d, transaction_id = '%s', update_at = %d WHERE oid = %d", $payment_status, $transaction_id, $now, $order_id)) {
       $status = TRUE;
 	  }
   }
   else {
-    if (db_query("UPDATE {ideal_payment_api_orders} SET payment_status = %d WHERE oid = %d", $payment_status, $order_id)) {
+    if (db_query("UPDATE {ideal_payment_api_orders} SET payment_status = %d, update_at = %d WHERE oid = %d", $payment_status, $now, $order_id)) {
       $status = TRUE;
 	  }
   }
