@@ -59,10 +59,11 @@ function ideal_payment_api_transreq_call($order) {
   require_once($path_module.'/lib/iDEALConnector.php');
   $iDEALConnector = new iDEALConnector();
   
+  $order['description'] = check_plain($order['description']);
   if (drupal_strlen($order['description']) > 32) {//@TODO: run this trough a general error handler.
     $order['description_orig'] = $order['description'];
     $order['description'] = drupal_substr($order['description'], 0, 32);
-    watchdog('ideal_api', t('iDEAL decription too long. Changed from %orig to %shortened'), array('%orig' => $order['description_orig'], '%shortened' => $order['description']));
+    watchdog('ideal_api', t('iDEAL decription too long. Changed from %orig to %shortened', array('%orig' => $order['description_orig'], '%shortened' => $order['description'])));
   }
   
   //issuerid is min. 4 chars, add leading 0's
