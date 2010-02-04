@@ -90,9 +90,6 @@ function ideal_payment_api_transreq_call($order) {
 		$ISSURL = $response->getIssuerAuthenticationURL();
 		$ISSURL = html_entity_decode($ISSURL);
 
-    //Save order as 'payed = 0'
-    ideal_payment_api_order_save($order_id, $user_id, $description, $amount, $issuer_id, $transaction_id, 0);
-
 		//Redirect the browser to the issuer URL
 		header("Location: $ISSURL");
 		exit();

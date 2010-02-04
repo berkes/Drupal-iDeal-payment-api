@@ -293,9 +293,8 @@ function ideal_payment_api_issuer_form_validate($form, $form_state) {
 function ideal_payment_api_issuer_form_submit($form, &$form_state) {
   $order = $form_state['order'];
   $order['issuer_id'] = $form_state['issuer'];
-  $order['description'] = theme('ideal_payment_api_description', $order);
   
-  if (!$order['order_id'] = ideal_payment_api_order_save($order['user_id'], $order['description'], $order['amount'], $form_state['issuer'], NULL, 0)) {
+  if (!ideal_payment_api_order_save($order)) {
     drupal_set_message(t('Order could not be saved.'));
   }
   else {
@@ -327,7 +326,7 @@ function theme_ideal_payment_api_issuer_form($form) {
  * @TODO: collect sensible information and turn into a short string.
  */
 function theme_ideal_payment_api_description($order) {
-  return '['. $order['order_id'] .']; '. 'foo'; 
+  return '['. $order['order_id'] .'] foo'; 
 }
 
 /**
@@ -422,17 +421,20 @@ function ideal_payment_api_get_lib() {
 /**
  * Save order
  */
-function ideal_payment_api_order_save($user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status, $foreign_id = 0) {
+function ideal_payment_api_order_save(&$order) {
   $now = time();
-  $order_id = db_next_id('ideal_payment_api_orders');
+  $order['order_id'] = db_next_id('ideal_payment_api_orders');
+  $order['description'] = theme('ideal_payment_api_description', $order);
+  
 	$inserted = db_query("INSERT INTO {ideal_payment_api_orders} (oid, user_id, description, amount, issuer_id, transaction_id, payment_status, foreign_id, created_at, updated_at) VALUES
-					(%d, %d,'%s', %d, '%s', '%s', %d, %d, %d, %d)", $order_id, $user_id, $description, $amount, $issuer_id, $transaction_id, $payment_status, $foreign_id, $now, $now);
+					(%d, %d,'%s', %d, '%s', '%s', %d, %d, %d, %d)", $order['order_id'], $order['user_id'], $order['description'],$order['amount'], $order['issuer_id'], $order['transaction_id'], $order['payment_status'], $order['foreign_id'], $now, $now);
 
+	  
 	if ($inserted) {
-		return $order_id;
+		return TRUE;
 	}
 	else {
-		return 0;
+		return FALSE;
 	}
 }
 
