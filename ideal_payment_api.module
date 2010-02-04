@@ -201,7 +201,7 @@ function ideal_payment_api_payment_page($order_desc, $order_total, $path_back_er
 
   if (user_access('make iPAPI payments')) {
     $order = array(
-      'description' => $order_desc,
+      'header' => $order_desc,
       'amount' => $order_total * 100,   //amount *100, in cents.
       'path_back_error' => $path_back_error,
       'path_back_succes' => $path_back_succes,
@@ -293,8 +293,8 @@ function ideal_payment_api_issuer_form_validate($form, $form_state) {
 function ideal_payment_api_issuer_form_submit($form, &$form_state) {
   $order = $form_state['order'];
   $order['issuer_id'] = $form_state['issuer'];
+  $order['description'] = theme('ideal_payment_api_description', $order);
   
-  //@TODO: $description passed to ideal payment must be an Human readable identifier string. 
   if (!$order['order_id'] = ideal_payment_api_order_save($order['user_id'], $order['description'], $order['amount'], $form_state['issuer'], NULL, 0)) {
     drupal_set_message(t('Order could not be saved.'));
   }
@@ -312,11 +312,22 @@ function ideal_payment_api_issuer_form_submit($form, &$form_state) {
 function theme_ideal_payment_api_issuer_form($form) {
   $output = '';
   $output .= '<div class="order">';
-  $output .= $form['order']['#value']['description']; //no filter_xss, because often we get a table. Passer should escape XSS!
+  $output .= $form['order']['#value']['header']; //no filter_xss, because often we get a table. Passer should escape XSS!
   $output .= '</div>';
 
   $output .= drupal_render($form);
   return $output;
+}
+
+/**
+ * Theme function to build an administrative description that is passed along
+ *  to the ideal environment. 
+ * @ingroup theme
+ * @param $order
+ * @TODO: collect sensible information and turn into a short string.
+ */
+function theme_ideal_payment_api_description($order) {
+  return '['. $order['order_id'] .']; '. 'foo'; 
 }
 
 /**
