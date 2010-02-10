@@ -3,6 +3,13 @@
 
 /**
  * Implementation of hook_install().
+ * Status code in payment_status column can be one of:
+ * define('IPAPI_STATUS_OPEN', 0);
+ * define('IPAPI_STATUS_SUCCESS', 1);
+ * define('IPAPI_STATUS_CANCELLED', 2);
+ * define('IPAPI_STATUS_EXPIRED', 3);
+ * define('IPAPI_STATUS_FAILURE', 4);
+ * …or a number above 10 of your own choosing.
  */
 function ideal_payment_api_install() {
   switch ($GLOBALS['db_type']) {
