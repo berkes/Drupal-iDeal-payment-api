@@ -47,7 +47,9 @@ function ideal_payment_api_dirreq_call() {
 
 }
 
-
+/**
+ * Calls a transaction request
+ */
 function ideal_payment_api_transreq_call($order) {
   //Get user ID
   global $user;
@@ -81,42 +83,20 @@ function ideal_payment_api_transreq_call($order) {
   );
 
   if (!$response->errCode) {
-		$transaction_id = $response->getTransactionID();
-
-    //Add transaction id to sesion order_data
-    $_SESSION['ideal_payment_api_order_data']['transaction_id'] = $transaction_id;
-
-		//Get IssuerURL and decode it
-		$ISSURL = $response->getIssuerAuthenticationURL();
-		$ISSURL = html_entity_decode($ISSURL);
-
-		//Redirect the browser to the issuer URL
-		header("Location: $ISSURL");
-		exit();
-		//@TODO: prolly best to use Drupal_goto or at least drupal_exit is required.
+    return $response;
 	}
   else {
-		//TransactionRequest failed, inform the consumer
-		$msg = $response->consumerMsg;
     watchdog('ideal_api', $response->errCode.': '.$response->errMsg, NULL, WATCHDOG_ERROR);
-		drupal_set_message('Something went wrong in processing your IDEAL payment. IDEAL error:'.'<br>'.$msg, 'error');
-    drupal_goto($path_back_error);
+    return $response;
 	}
-
-  return($ideal_payment_api_form );
 }
 
-
-function ideal_payment_api_statreq_call($order_data = FALSE, $unattended = FALSE) {
-  if (!is_array($order_data)) {
-    $transaction_id = check_plain($_GET['trxid']);
-    $order_id = check_plain($_GET['ec']); //@TODO: this MUST be made a lot sturdier. You cannot assume ec == order_id.
-    $order_data = ideal_payment_api_order_load($order_id);
-  }
-  else {
-    $transaction_id = $order_data['transaction_id'];
-    $order_id = $order_data['order_id'];
-  }
+/** 
+ * Calls the STATUS request
+ **/
+function ideal_payment_api_statreq_call($order_data, $unattended = FALSE) {
+  $transaction_id = $order_data['transaction_id'];
+  $order_id = $order_data['order_id'];
   $amount = $order_data['amount'];
   
   $description = $order_data['description'];

@@ -13,6 +13,12 @@
  * @TODO: harmonise the error messages to WATCHDOG and to SET_MESSAGE. 
  */
 
+define('IPAPI_STATUS_OPEN', 0);
+define('IPAPI_STATUS_SUCCESS', 1);
+define('IPAPI_STATUS_CANCELLED', 2);
+define('IPAPI_STATUS_EXPIRED', 3);
+define('IPAPI_STATUS_FAILURE', 4);
+
 /**
  * Implementation of hook_cron().
  */
@@ -20,7 +26,7 @@ function ideal_payment_api_cron() {
   _ideal_payment_api_include_lib();
   
   // @TODO: insert time-based action firing here.
-  //@TODO: refres-issuers should be called far less often then recheck. 
+  //@TODO: refresh-issuers should be called far less often then recheck. 
   ideal_payment_api_refresh_issuerlist();
   ideal_payment_api_auto_recheck();
 }
@@ -52,7 +58,7 @@ function ideal_payment_api_menu($may_cache) {
     $items[] = array(
       'path' => 'ideal/payment_statreq',
       'title' => t('IDEAL Payment status request'),
-      'callback' => 'ideal_payment_api_statreq_call',
+      'callback' => 'ideal_payment_api_statreq_confirm',
       'callback arguments' => array(FALSE, FALSE),
       'access' => user_access('access content'),
       'type' => MENU_CALLBACK,
@@ -276,12 +282,28 @@ function ideal_payment_api_issuer_form_validate($form, $form_state) {
 function ideal_payment_api_issuer_form_submit($form, &$form_state) {
   $order = $form_state['order'];
   $order['issuer_id'] = $form_state['issuer'];
+  
+  # Saving the order will create a unique $order['order_id'] and update the $order.
   if (!ideal_payment_api_order_save($order)) {
     drupal_set_message(t('Order could not be saved.'));
   }
   else {
-    ideal_payment_api_transreq_call($order);
-    //@TODO: find a way to enforce all other potential submit-handlers tio be fired first. This call does an exit().
+    $response = ideal_payment_api_transreq_call($order);
+    
+    if (!$response->errCode) {
+		  //Get IssuerURL and decode it
+		  $issuer_url = $response->getIssuerAuthenticationURL;
+		  $order['transaction_id'] = $response->transactionID;
+		  ideal_payment_api_order_update($order['order_id'], IPAPI_STATUS_OPEN, $order['transaction_id']);
+		  drupal_goto($issuer_url);
+		}
+    else {//TransactionRequest failed, inform the consumer
+      $msg = $response->consumerMsg;
+      drupal_set_message(t('Something went wrong in processing your IDEAL payment. IDEAL error: %msg', array($msg)), 'error');
+      ideal_payment_api_order_update($order['order_id'], IPAPI_STATUS_OPEN, 0);
+      //@TODO: or should we set to CANCELLED HERE; can we recheck at this phase, at all?
+      return 'error'; //@TODO: allow path-back-on-error setting! 
+	  }
   }  
 }
 
@@ -350,6 +372,38 @@ function ideal_payment_api_auto_recheck() {
   }
 }
 
+/** 
+ * Confirm a payment, either when called as return-page, or else from cron.
+ *  iDEAL returns to the return url and passes these vars along: ?trxid=0050000020612432&ec=37 
+ * @param $txrid
+ *   Description of param $param1
+ * @param $ec
+ *   Passed 
+ *
+ * @return
+ *   Description of return value
+ */
+function ideal_payment_api_statreq_confirm() {
+  $transaction_id = check_plain($_GET['trxid']); 
+  $order_id = check_plain($_GET['ec']);
+  $order = ideal_payment_api_order_load($order_id);
+  if ($order) {
+    
+  }
+  
+  //Allow other modules to jump in and confirm that this order is valid.
+  
+  //Write out a log. 
+  //update the order. 
+    
+  //Allow other modules to update the transaction or order.
+  
+  //Flash the user. 
+  dvm($order_data);
+  
+  //redirect the user to the landing-page.
+  drupal_goto();
+} 
 /**
  *----------------
  *Helper functions

@@ -31,17 +31,10 @@ function ideal_payment_api_order_save(&$order) {
 function ideal_payment_api_order_update($order_id, $payment_status, $transaction_id = NULL) {
   $status = FALSE;
   $now = time();
-  
-  if (!$transaction_id) {
-    if (db_query("UPDATE {ideal_payment_api_orders} SET payment_status = %d, transaction_id = '%s', updated_at = %d WHERE oid = %d", $payment_status, $transaction_id, $now, $order_id)) {
-      $status = TRUE;
-	  }
+  if (db_query("UPDATE {ideal_payment_api_orders} SET payment_status = %d, transaction_id = '%s', updated_at = %d WHERE oid = %d", $payment_status, $transaction_id, $now, $order_id)) {
+    $status = TRUE;
   }
-  else {
-    if (db_query("UPDATE {ideal_payment_api_orders} SET payment_status = %d, updated_at = %d WHERE oid = %d", $payment_status, $now, $order_id)) {
-      $status = TRUE;
-	  }
-  }
+  return $status;
 }
 
 /**
