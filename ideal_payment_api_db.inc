@@ -51,9 +51,11 @@ function ideal_payment_api_order_delete($order_id) {
 
 /**
  * Load order
+ * @param $order_id integer The ID of the order to be loaded.
+ * @param status int optional status id, defaults to 0, only returns orders that are still open.
  */
-function ideal_payment_api_order_load($order_id) {
-	$result = db_query("SELECT * FROM {ideal_payment_api_orders} WHERE oid = %d", $order_id);
+function ideal_payment_api_order_load($order_id, $payment_status = 0) {
+	$result = db_query("SELECT * FROM {ideal_payment_api_orders} WHERE oid = %d AND payment_status = %d", $order_id, $payment_status);
 	$order = db_fetch_array($result);
 	if (is_array($order)) {
 		return $order;
