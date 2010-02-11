@@ -94,72 +94,16 @@ function ideal_payment_api_transreq_call($order) {
 /** 
  * Calls the STATUS request
  **/
-function ideal_payment_api_statreq_call($order_data, $unattended = FALSE) {
-  $transaction_id = $order_data['transaction_id'];
-  $order_id = $order_data['order_id'];
-  $amount = $order_data['amount'];
-  
-  $description = $order_data['description'];
-  if (drupal_strlen($description) > 32) {//@TODO: run this trough a general error handler.
-    $description = drupal_substr($description, 0, 32);
-    watchdog('ideal_api', t('iDEAL decription too long. Changed from %orig to %shortened'), array('%orig' => $order_data['description'], '%shortened' => $description));
-  }
-  $issuer_id = $order_data['issuer_id'];
-  $path_back_succes = $order_data['path_back_succes'];
-  $path_back_error = $order_data['path_back_error'];
-
-  //Get user ID
-  global $user;
-  if ($user) {
-    $user_id = $user->uid;
-  }
-
-  $path_module = drupal_get_path('module', 'ideal_payment_api');
-
+function ideal_payment_api_statreq_call($order) {
   //include connector
+  $path_module = drupal_get_path('module', 'ideal_payment_api');
   require_once($path_module.'/lib/iDEALConnector.php');
   //Initialise connector
   $iDEALConnector = new iDEALConnector();
-
+dvm($order);
 	//Create StatusRequest
-	$response = $iDEALConnector->RequestTransactionStatus($transaction_id);
+	$response = $iDEALConnector->RequestTransactionStatus($order['transaction_id']);
 
   //$transID = str_pad($transaction_id, 16, "0"); //Delete??
-
-  if ($response->errCode) {
-		//StatusRequest failed
-    $msg = $response->consumerMsg;
-    watchdog('ideal_api', $response->errCode .': '. $response->errMsg, NULL, WATCHDOG_ERROR);
-    if ($unattended) {
-      return FALSE;
-    }
-    drupal_set_message(t('We could not verify the payment status automaticaly, You can check your payment manualy with the button below. Please contact us if you keep getting this message. IDEAL error:')).'<br>'.$msg;
-    drupal_goto('ideal/payment_statreq_recheck');
-	}
-	elseif ($response->status != 1) {
-		//Transaction failed
-    if ($unattended) {
-      watchdog('ideal_api', 'Your IDEAL payment has been canceled by you or by the IDEAL process. Please try again. Contact us if you have problems.', NULL, WATCHDOG_WARNING);
-      return FALSE;
-    }
-    //inform the consumer
-		drupal_set_message(t('Your IDEAL payment has been canceled by you or by the IDEAL process. Please try again. Contact us if you have problems.'), 'warning');
-    drupal_goto($path_back_error);
-	}
-  else {
-    //Update order as 'payed = 1'
-    ideal_payment_api_order_update($order_id, 1);
-
-    module_invoke_all('ideal_payed', $order_data);
-    
-    if ($unattended) {
-      return FALSE;
-    }
-	  drupal_set_message(t('Thank you for shopping with us, your payment is processed sucessfuly'));
-
-    // This lets us know it's a legitimate access of the complete page.
-    $_SESSION['do_complete'] = TRUE;
-
-    drupal_goto($path_back_succes);
-  }
+  return $response;
 }

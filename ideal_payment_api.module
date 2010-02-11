@@ -289,10 +289,9 @@ function ideal_payment_api_issuer_form_submit($form, &$form_state) {
   }
   else {
     $response = ideal_payment_api_transreq_call($order);
-    
     if (!$response->errCode) {
 		  //Get IssuerURL and decode it
-		  $issuer_url = $response->getIssuerAuthenticationURL;
+		  $issuer_url = $response->issuerAuthenticationURL;
 		  $order['transaction_id'] = $response->transactionID;
 		  ideal_payment_api_order_update($order['order_id'], IPAPI_STATUS_OPEN, $order['transaction_id']);
 		  drupal_goto($issuer_url);
@@ -381,28 +380,42 @@ function ideal_payment_api_auto_recheck() {
  *   Passed 
  *
  * @return
- *   Description of return value
+ *   Nothing.
  */
 function ideal_payment_api_statreq_confirm() {
-  $transaction_id = check_plain($_GET['trxid']); 
-  $order_id = check_plain($_GET['ec']);
-  $order = ideal_payment_api_order_load($order_id);
-  if ($order) {
-    
+  $has_error = TRUE;
+  dvm('in confirm');
+  
+  if (_ideal_payment_api_validate_merchant_return_url($_GET['trxid'], $_GET['ec'])) {
+    $order = ideal_payment_api_order_load($_GET['ec']);
+    $response = ideal_payment_api_statreq_call($order);
+    dvm($response);
+    if (_ideal_payment_api_validate_acquire_status_req($response)) {
+      dvm('statrq validates');
+      $fatal = _ideal_payment_api_set_error_message($response);
+      if (!$fatal) {
+        $has_error = FALSE;
+      }
+      
+      ideal_payment_api_order_update($order['oid'], $response->status, $order['transaction_id']);
+      //Allow other modules to update the transaction or order.
+      module_invoke_all('ideal_payment_api_order_payed', $order, $response);
+      $fatal = _ideal_payment_api_set_status_message($response);
+      if (!$fatal) {
+        $has_error = FALSE;
+      }
+    }
   }
   
-  //Allow other modules to jump in and confirm that this order is valid.
-  
-  //Write out a log. 
-  //update the order. 
-    
-  //Allow other modules to update the transaction or order.
-  
-  //Flash the user. 
-  dvm($order_data);
-  
+  if ($has_error) {
+    $path_back = $order_data['path_back_error'] ? $order_data['path_back_error'] : '';//@TODO replace with proper path-code, such as variable_get.
+  }
+  else {
+    $path_back = $order_data['path_back_succes'] ? $order_data['path_back_succes'] : '';//@TODO replace with proper path-code, such as variable_get.
+  }
   //redirect the user to the landing-page.
-  drupal_goto();
+  //drupal_goto($path_back);
+  return "hello";
 } 
 /**
  *----------------
@@ -466,6 +479,132 @@ function _ideal_payment_api_include_lib() {
   
   # Include the database lib too.
   require_once($path_module .'/ideal_payment_api_db.inc');
+}
+
+/** .
+ *
+ * Validates the parameters in the return-url, matches against our database
+ *  and the status of various settings.
+ *
+ * @param $txrid
+ *   Description of param $txrid
+ * @param $ec
+ *   Description of param $ec
+ * @param $order
+ *   Description of param $order
+ *
+ * @return
+ *   Boolean TRUE on valid, FALSE on invalid
+ */
+function _ideal_payment_api_validate_merchant_return_url($txrid, $ec) {
+  $valid = FALSE;
+  if (!empty($txrid)) { //txrid must be valid
+    if (!empty($ec) && ($ec = (int)$ec)) { //$ec must be valid
+      $order = ideal_payment_api_order_load($ec);
+      dvm($order);
+      if ($order['oid'] && ($txrid == $order['transaction_id'])) { //Order must be valid, must exist and the transaction_id must match $txrid.
+        //Allow other modules to jump in and confirm that this order is valid.
+        $statii = module_invoke_all('ideal_payment_api_order_validate', $order);
+        if (!in_array(FALSE, $statii, TRUE)) { //We got no Veto
+          $valid = TRUE;
+        }
+        else {
+          watchdog('ideal_payment_api', t('Order validation halted by a module implementation of hook_ideal_payment_api_order_validate. OrderID was $order_id', array('%order_id' => $order_id)));
+        }
+      }
+      else {
+       watchdog('ideal_payment_api', t('Order not found in the database with this order_id and transaction_id. OrderID was %order_id, TransactionID was %transaction_id ', array('%order_id' => $order_id, '%transaction_id' => $transaction_id)));
+      }
+    }
+  }
+    
+  return $valid;
+}
+
+/** 
+ * Validates the aquire status request, and sees if there are no errors
+ * @param $response
+ *   Description of param $response
+ *
+ * @return
+ *   boolean TRUE on succes, FALSE on fault or error. 
+ * @TODO: create proper validation here.
+ */
+function _ideal_payment_api_validate_acquire_status_req($response) {
+  $valid = FALSE;
+  if (!empty($response)) {
+    if (!$response->errCode) {
+      $valid = TRUE;
+    }
+  }
+  
+  return $valid;
+}
+
+/** 
+ * Sets a watchdog and, if needed, a drupal_set_message.
+ * 
+ * @param $response
+ *   Description of param $response
+ *
+ * @return
+ *   bool FALSE on a fatal error TRUE if none-fatal.
+ */
+function _ideal_payment_api_set_error_message($response) {
+  if ($response->errCode) {
+    watchdog('ideal_api', $response->errCode .': '. $response->errMsg, WATCHDOG_ERROR);
+
+    switch ($response->errCode) {
+      case '1': //@TODO insert all possible errors in here.
+        $msg = t('We could not verify the payment status automaticaly, You can check your payment manualy with the button below. Please contact us if you keep getting this message. IDEAL error: %consumer_msg', array('%msg' => $response->consumerMsg));
+         $fatal = FALSE;
+        break;
+      default:
+          $fatal = TRUE;
+        break;
+    }
+  }
+  
+  if ($msg) {
+    drupal_set_message($msg);
+  }
+  
+  return $fatal;
+}
+
+/** 
+ * Sets the status message in watchdog and flash-messages.
+ * 
+ * @param $response
+ *   Description of param $response
+ *
+ * @return
+ *   boolean TRUE on fatal, FALSE on none-fatal.
+ */
+function _ideal_payment_api_set_status_message($response) {
+dvm($response);
+  $fatal = FALSE;
+  //@TODO: insert all statii in here with proper user-messages,
+	switch ($response->status) {
+	  case 'IPAPI_STATUS_OPEN':
+	  break;
+	  case 'IPAPI_STATUS_SUCCESS':
+	    drupal_set_message(t('Thank you for shopping with us.')); //@TODO: write a much better tekst for this.
+	  break;
+	  case 'IPAPI_STATUS_CANCELLED':
+	    //Transaction failed
+      watchdog('ideal_api', 'Your IDEAL payment has been canceled by you or by the IDEAL process. Please try again. Contact us if you have problems.', NULL, WATCHDOG_WARNING);
+      //inform the consumer
+		  drupal_set_message(t('Your IDEAL payment has been canceled by you or by the IDEAL process. Please try again. Contact us if you have problems.'), 'warning');
+	  break;
+	  case 'IPAPI_STATUS_EXPIRED':
+	    $fatal = TRUE;
+	  break;
+	  case 'IPAPI_STATUS_FAILURE':
+	  break;
+	}
+	
+	return $fatal;
 }
 
 /**
