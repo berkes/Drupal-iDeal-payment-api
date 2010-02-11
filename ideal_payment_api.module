@@ -407,7 +407,7 @@ function ideal_payment_api_statreq_confirm() {
         $has_error = FALSE;
       }
       
-      ideal_payment_api_order_update($order['oid'], $response->status, $order['transaction_id']);
+      ideal_payment_api_order_update($order['order_id'], $response->status, $order['transaction_id']);
       //Allow other modules to update the transaction or order.
       module_invoke_all('ideal_payment_api_order_payed', $order, $response);
       $fatal = _ideal_payment_api_set_status_message($response);
