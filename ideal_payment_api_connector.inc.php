@@ -100,7 +100,7 @@ function ideal_payment_api_statreq_call($order) {
   require_once($path_module.'/lib/iDEALConnector.php');
   //Initialise connector
   $iDEALConnector = new iDEALConnector();
-dvm($order);
+
 	//Create StatusRequest
 	$response = $iDEALConnector->RequestTransactionStatus($order['transaction_id']);
 

@@ -56,11 +56,10 @@ function ideal_payment_api_order_delete($order_id) {
  */
 function ideal_payment_api_order_load($order_id, $payment_status = 0) {
   static $orders; 
-  
   if (empty($orders[$order_id]) || !is_array($orders[$order_id])) {
     $result = db_query("SELECT oid AS order_id, user_id AS uid, description, amount, issuer_id, transaction_id, payment_status, foreign_id FROM {ideal_payment_api_orders} WHERE oid = %d AND payment_status = %d", $order_id, $payment_status);
 	  $orders[$order_id] = db_fetch_array($result);
   }
-dvm($orders);	
+
 	return $orders[$order_id];
 }

@@ -311,6 +311,7 @@ function ideal_payment_api_issuer_form_submit($form, &$form_state) {
       drupal_set_message(t('Something went wrong in processing your IDEAL payment. IDEAL error: %msg', array($msg)), 'error');
       ideal_payment_api_order_update($order['order_id'], IPAPI_STATUS_OPEN, 0);
       //@TODO: or should we set to CANCELLED HERE; can we recheck at this phase, at all?
+
       return 'error'; //@TODO: allow path-back-on-error setting! 
 	  }
   }  
@@ -394,14 +395,11 @@ function ideal_payment_api_auto_recheck() {
  */
 function ideal_payment_api_statreq_confirm() {
   $has_error = TRUE;
-  dvm('in confirm');
   
   if (_ideal_payment_api_validate_merchant_return_url($_GET['trxid'], $_GET['ec'])) {
     $order = ideal_payment_api_order_load($_GET['ec']);
     $response = ideal_payment_api_statreq_call($order);
-    dvm($response);
     if (_ideal_payment_api_validate_acquire_status_req($response)) {
-      dvm('statrq validates');
       $fatal = _ideal_payment_api_set_error_message($response);
       if (!$fatal) {
         $has_error = FALSE;
@@ -429,9 +427,9 @@ function ideal_payment_api_statreq_confirm() {
     //no use to keep the session if it can never be used again.
     _ideal_payment_api_session_del();
   }
+  
   //redirect the user to the landing-page.
-  //drupal_goto($path_back);
-  return "hello";
+  drupal_goto($path_back);
 } 
 /**
  *----------------
@@ -517,7 +515,6 @@ function _ideal_payment_api_validate_merchant_return_url($txrid, $ec) {
   if (!empty($txrid)) { //txrid must be valid
     if (!empty($ec) && ($ec = (int)$ec)) { //$ec must be valid
       $order = ideal_payment_api_order_load($ec);
-      dvm($order);
       if ($order['order_id'] && ($txrid == $order['transaction_id']) &&
           _ideal_payment_api_session_order_is_valid($order)) { //Order must be valid, must exist and the transaction_id must match $txrid.
         //Allow other modules to jump in and confirm that this order is valid.
@@ -599,25 +596,26 @@ function _ideal_payment_api_set_error_message($response) {
  *   boolean TRUE on fatal, FALSE on none-fatal.
  */
 function _ideal_payment_api_set_status_message($response) {
-dvm($response);
   $fatal = FALSE;
   //@TODO: insert all statii in here with proper user-messages,
 	switch ($response->status) {
-	  case 'IPAPI_STATUS_OPEN':
+	  case IPAPI_STATUS_OPEN:
 	  break;
-	  case 'IPAPI_STATUS_SUCCESS':
+	  case IPAPI_STATUS_SUCCESS:
 	    drupal_set_message(t('Thank you for shopping with us.')); //@TODO: write a much better tekst for this.
 	  break;
-	  case 'IPAPI_STATUS_CANCELLED':
+	  case IPAPI_STATUS_CANCELLED:
 	    //Transaction failed
       watchdog('ideal_api', 'Your IDEAL payment has been canceled by you or by the IDEAL process. Please try again. Contact us if you have problems.', NULL, WATCHDOG_WARNING);
       //inform the consumer
 		  drupal_set_message(t('Your IDEAL payment has been canceled by you or by the IDEAL process. Please try again. Contact us if you have problems.'), 'warning');
+		  $fatal = TRUE;
 	  break;
-	  case 'IPAPI_STATUS_EXPIRED':
+	  case IPAPI_STATUS_EXPIRED:
 	    $fatal = TRUE;
 	  break;
-	  case 'IPAPI_STATUS_FAILURE':
+	  case IPAPI_STATUS_FAILURE:
+	    $fatal = TRUE;
 	  break;
 	}
 	
