@@ -172,6 +172,14 @@ function ideal_payment_api_admin_settings() {
     '#description' => t('Language is only used for showing errormessages in the prefered language. nl/en.'),
     '#required' => TRUE,
   );
+  
+  $form['ideal_payment_api_sessions'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use Cookie sessions'),
+    '#default_value' => variable_get('ideal_payment_api_sessions', 1),
+    '#description' => t('Whether or not to use sessions on top of the usual validation. If set, the API will additionally use cookies to track the transaction_id and order_id. This lowers chances of breaking your database/payments trough url-hacking.'),
+    '#required' => FALSE,
+  );
 
   return system_settings_form($form);
 }
@@ -288,12 +296,14 @@ function ideal_payment_api_issuer_form_submit($form, &$form_state) {
     drupal_set_message(t('Order could not be saved.'));
   }
   else {
+  _ideal_payment_api_session_set($order);
     $response = ideal_payment_api_transreq_call($order);
     if (!$response->errCode) {
 		  //Get IssuerURL and decode it
 		  $issuer_url = $response->issuerAuthenticationURL;
 		  $order['transaction_id'] = $response->transactionID;
 		  ideal_payment_api_order_update($order['order_id'], IPAPI_STATUS_OPEN, $order['transaction_id']);
+		  _ideal_payment_api_session_set($order);
 		  drupal_goto($issuer_url);
 		}
     else {//TransactionRequest failed, inform the consumer
@@ -412,6 +422,12 @@ function ideal_payment_api_statreq_confirm() {
   }
   else {
     $path_back = $order_data['path_back_succes'] ? $order_data['path_back_succes'] : '';//@TODO replace with proper path-code, such as variable_get.
+    _ideal_payment_api_session_del();
+  }
+  
+  if ($fatal) {
+    //no use to keep the session if it can never be used again.
+    _ideal_payment_api_session_del();
   }
   //redirect the user to the landing-page.
   //drupal_goto($path_back);
@@ -502,7 +518,8 @@ function _ideal_payment_api_validate_merchant_return_url($txrid, $ec) {
     if (!empty($ec) && ($ec = (int)$ec)) { //$ec must be valid
       $order = ideal_payment_api_order_load($ec);
       dvm($order);
-      if ($order['oid'] && ($txrid == $order['transaction_id'])) { //Order must be valid, must exist and the transaction_id must match $txrid.
+      if ($order['order_id'] && ($txrid == $order['transaction_id']) &&
+          _ideal_payment_api_session_order_is_valid($order)) { //Order must be valid, must exist and the transaction_id must match $txrid.
         //Allow other modules to jump in and confirm that this order is valid.
         $statii = module_invoke_all('ideal_payment_api_order_validate', $order);
         if (!in_array(FALSE, $statii, TRUE)) { //We got no Veto
@@ -607,6 +624,28 @@ dvm($response);
 	return $fatal;
 }
 
+//@TODO: harden and document.
+//@TODO: add issets to only CRUD session when (not) already set.
+function _ideal_payment_api_session_set($order) {
+  if (variable_get('ideal_payment_api_sessions', 1)) {
+    $_SESSION['ideal_payment_api_order'] = $order;
+  }
+}
+function _ideal_payment_api_session_del() {
+  if (variable_get('ideal_payment_api_sessions', 1)) {
+    unset($_SESSION['ideal_payment_api_order']);
+  }
+}
+function _ideal_payment_api_session_order_is_valid($order) {
+  if (variable_get('ideal_payment_api_sessions', 1)) {
+    if ($_SESSION['ideal_payment_api_order']['order_id'] == $order['order_id']) {
+      if ($_SESSION['ideal_payment_api_order']['transaction_id'] == $order['transaction_id']) {
+         return TRUE;
+      }
+    }
+  }
+  return TRUE; //in case we don't want session tracking.
+}
 /**
  * Test this API
  */
