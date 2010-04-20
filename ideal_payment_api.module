@@ -233,6 +233,8 @@ function ideal_payment_api_refresh_issuerlist() {
 
 /**
  * Load issuer form
+ * When using this form, embedded in another form, make sure you do not override the validate and submit handlers. 
+ *  These are needed to process the form.
  */
 function ideal_payment_api_issuer_form($order) {
   
@@ -267,6 +269,11 @@ function ideal_payment_api_issuer_form($order) {
     '#value' => t('Go to my bank »'),
     '#weight' => 1,
   );
+
+  //Set the form_handlers by hand, so that our own validate and submit function
+  // will be called, even if this form is embedded in another form.
+  $form['#submit'] = array('ideal_payment_api_issuer_form_submit' => array());
+  $form['#validate'] = array('ideal_payment_api_issuer_form_validate' => array());
 
   return $form;
 }
